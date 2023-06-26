@@ -1,82 +1,87 @@
-import './App.css';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Button, Container, Pagination } from "react-bootstrap";
+import Navbar from "./components/Navbar";
+import 'bootstrap/dist/css/bootstrap.css';
 
-import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-import { Card } from './components/card/Card';
-import { CardDetails } from './components/card/CardDetails';
-import { Filter } from './components/filter/Filter';
-import { Navbar } from './components/navbar/Navbar';
-import { Pagination } from './components/pagination/Pagination';
-import { Search } from './components/search/Search';
-import { Episodes } from './pages/Episodes';
-import { Location } from './pages/Location';
+import CharacterList from "./components/CharacterList";
 
 function App() {
-  return (
-    <div className="App">
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/:id" element={<CardDetails />} />
+  const [characters, setCharacters] = useState([]);
+  const [info, setInfo] = useState({});
+  const url = "https://rickandmortyapi.com/api/character";
 
-          <Route path="/episodes" element={<Episodes />} />
-          <Route path="/episodes/:id" element={<CardDetails />} />
+  const fetchCharacters = (url) => {
+    axios
+      .get(url)
+      .then((data) => {
+        setCharacters(data.data.results);
+        setInfo(data.data.info);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
-          <Route path="/location" element={<Location />} />
-          <Route path="/location/:id" element={<CardDetails />} />
-        </Routes>
-      </Router>
-    </div>
-  );
-}
+  const handleNextPage = () => {
+    fetchCharacters(info.next);
+    window.scrollTo(0, 0);
+  };
 
-const Home = () => {
-  let [pageNumber, updatePageNumber] = useState(1);
-  let [status, updateStatus] = useState("");
-  let [gender, updateGender] = useState("");
-  let [species, updateSpecies] = useState("");
-  let [fetchedData, updateFetchedData] = useState([]);
-  let [search, setSearch] = useState("");
-  let { info, results } = fetchedData;
-
-  let api = `https://rickandmortyapi.com/api/character/?page=${pageNumber}&name=${search}&status=${status}&gender=${gender}&species=${species}`;
+  const handlePreviousPage = () => {
+    fetchCharacters(info.prev);
+    window.scrollTo(0, 0);
+  };
 
   useEffect(() => {
-    (async function () {
-      let data = await fetch(api).then((res) => res.json());
-      updateFetchedData(data);
-    })();
-  }, [api]);
+    fetchCharacters(url);
+  }, []);
+
   return (
-    <div className="App">
-      <h1 className="text-center mb-3">Characters</h1>
-      <Search setSearch={setSearch} updatePageNumber={updatePageNumber} />
-      <div className="container">
-        <div className="row">
-          <Filter
-            pageNumber={pageNumber}
-            status={status}
-            updateStatus={updateStatus}
-            updateGender={updateGender}
-            updateSpecies={updateSpecies}
-            updatePageNumber={updatePageNumber}
-          />
-          <div className="col-lg-8 col-12">
-            <div className="row">
-              <Card page="/" results={results} />
-            </div>
-          </div>
-        </div>
-      </div>
-      <Pagination
-        info={info}
-        pageNumber={pageNumber}
-        updatePageNumber={updatePageNumber}
-      />
-    </div>
+    <>
+      <Navbar brand="Rick and Morty App" />
+
+      <Container className="py-5">
+        <Pagination className="justify-content-center">
+          {info.prev && (
+            <Pagination.Item>
+              <Button variant="link" onClick={handlePreviousPage}>
+                Anterior
+              </Button>
+            </Pagination.Item>
+          )}
+          {info.next && (
+            <Pagination.Item>
+              <Button variant="link" onClick={handleNextPage}>
+                Próximo
+              </Button>
+            </Pagination.Item>
+          )}
+        </Pagination>
+      </Container>
+
+      <CharacterList characters={characters} />
+
+      <Container className="pb-5">
+        <Pagination className="justify-content-center">
+          {info.prev && (
+            <Pagination.Item>
+              <Button variant="link" className="page-link" onClick={handlePreviousPage}>
+                Anterior
+              </Button>
+            </Pagination.Item>
+          )}
+          {info.next && (
+            <Pagination.Item>
+              <Button variant="link" className="page-link" onClick={handleNextPage}>
+                Próximo
+              </Button>
+            </Pagination.Item>
+          )}
+        </Pagination>
+      </Container>
+    </>
   );
-};
+}
 
 export default App;
